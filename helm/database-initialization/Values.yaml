@@ -1,0 +1,30 @@
+
+database:
+  db: mydatabase
+  user: myuser
+  pass: mypassword
+  host: 127.0.0.1
+  port: 5432
+  certificatesSecretName: ""
+
+databaseSecretName: ""
+
+image:
+  repository: postgres
+  tag: 14
+
+init_script: |
+  CREATE TABLE blocks (
+    "network_id" INT,
+    "block_id" BIGINT,
+    "hash" VARCHAR(66),
+    "state_root" VARCHAR(66),
+    "extrinsics_root" VARCHAR(66),
+    "parent_hash" VARCHAR(66),
+    "digest" JSONB,
+    "metadata" JSONB,
+    "block_time" TIMESTAMP,
+    "row_id" SERIAL,
+    "row_time" TIMESTAMP,
+    PRIMARY KEY ("row_id")
+  );

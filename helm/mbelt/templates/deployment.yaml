@@ -1,0 +1,124 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "app.fullname" $ }}
+  labels:
+    app: {{ .Chart.Name }}
+    env: {{ .Values.environment }}
+    chain: {{ .Values.chain }}
+    role: {{ .Values.role }}
+spec:
+  replicas: {{ .Values.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      env: {{ .Values.environment }}
+      chain: {{ .Values.chain }}
+      role: {{ .Values.role }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        env: {{ .Values.environment }}
+        chain: {{ .Values.chain }}
+        role: {{ .Values.role }}
+    spec:
+      serviceAccountName: {{ template "app.fullname" $ }}
+      containers:
+      - name: streamer
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        ports: [ containerPort: {{ .Values.port }} ]
+        # securityContext:
+        #   runAsNonRoot: true
+        #   runAsUser: 1000
+        #   allowPrivilegeEscalation: false
+        command:
+        - sh
+        - -c
+        - |
+          {{- if and .Values.cloud_sql_ssl_options .Values.cloud_sql_ssl_options.enabled .Values.cloud_sql_ssl_options.secret_name }}
+          mkdir /tmp/certificates
+          cp /certificates-permissionsless/* /tmp/certificates
+          chmod -R 0600 /tmp/certificates
+          {{- end}}
+          node \
+          --require=./tsconfig-paths-bootstrap.js \
+          {{- range .Values.additional_args }}
+          {{ . }} \
+          {{- end }}
+          ./dist/index.js
+        {{- if and .Values.cloud_sql_ssl_options .Values.cloud_sql_ssl_options.enabled .Values.cloud_sql_ssl_options.secret_name }}
+        volumeMounts:
+        - name: database-certificates-volume
+          mountPath: /certificates-permissionsless
+        {{- end }}
+        {{- with .Values.env }}
+        env:
+        - { name: RESTART_BLOCKS_URI, value: {{ quote .restart_blocks_uri }} }
+        - { name: RESTART_ERAS_URI,   value: {{ quote .restart_eras_uri }} }
+        - { name: RESTART_ROUNDS_URI, value: {{ quote .restart_rounds_uri }} }
+        - { name: SUBSTRATE_URI, value: {{ quote .substrate_uri }} }
+        - { name: LOG_LEVEL,     value: {{ quote .log_level }} }
+        - { name: NETWORK_ID,    value: {{ quote .network_id }} }
+        - { name: MODE,          value: {{ quote .mode }} }
+        - { name: NETWORK,       value: {{ quote .network }} }
+        - { name: SUBSCRIBE,     value: {{ quote .subscribe }} }
+        - { name: PRELOAD,       value: {{ quote .preload }} }
+        - { name: PG_CONNECTION_STRING, value: {{ quote .pg_connection_string }} }
+        - { name: RABBITMQ,             value: {{ quote .rabbitmq_connection_string }} }
+        {{- end }}
+        - { name: REST_API_PORT, value: {{ quote .Values.port }} }
+        - { name: BASIC_AUTH,    value: "false" }
+        - { name: NODE_ENV,      value: "production" }
+
+        {{- if and .Values.cloud_sql_ssl_options .Values.cloud_sql_ssl_options.enabled .Values.cloud_sql_ssl_options.secret_name }}
+        - { name: PG_SSL_MODE,        value: "require"}
+        - { name: PG_SSL_ENABLED,     value: "true" }
+        - { name: PG_SSL_KEY_PATH,    value: "/tmp/certificates/postgresql.key" }
+        - { name: PG_SSL_CERT_PATH,   value: "/tmp/certificates/postgresql.crt" }
+        {{- else }}
+        - { name: PG_SSL_MODE,        value: "disable"}
+        - { name: PG_SSL_ENABLED,     value: "false" }
+        {{- end }}
+
+        resources:
+          limits: { cpu: {{ .Values.limits.cpu }}, memory: {{ .Values.limits.memory }} }
+          requests: { cpu: {{ .Values.requests.cpu }}, memory: {{ .Values.requests.memory }} }
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.affinity }}
+      affinity:
+        {{- with .Values.affinity }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.supersetNode.affinity }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- if or .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- with .Values.topologySpreadConstraints }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      {{- if and .Values.cloud_sql_ssl_options .Values.cloud_sql_ssl_options.enabled .Values.cloud_sql_ssl_options.secret_name }}
+      volumes:
+      - name: database-certificates-volume
+        secret:
+          secretName: {{ .Values.cloud_sql_ssl_options.secret_name }}
+          items:
+          - key: client-key
+            path: postgresql.key
+          - key: client-cert
+            path: postgresql.crt
+      {{- end }}

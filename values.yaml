@@ -1,0 +1,30 @@
+mbelt:
+  repository: altvnv/mbelt_preloader
+  tag: 77bc8650
+
+rabbitmq:
+  username: "mblet"
+  password: "rabbitmqpassword"
+
+database:
+  username: "mbelt"
+  password: "pgpassword"
+
+authorizedNetworks: []
+  # - name: "network"
+  #   address: "0.0.0.0/0"
+
+serviceAccountName: ""
+serviceAccountToken: ""
+polkadotWSRPCUrl: "wss://rpc.polkadot.io/"
+
+airflow:
+  username: admin
+  password: "airflowpassword"
+  fernetKey: ""
+  webserverKey: ""
+
+superset:
+  username: admin
+  password: "supersetpassword"
+  secretKey: "superSecretKey"

@@ -1,0 +1,21 @@
+---
+environment: mbelt3-prod
+replicas: 1
+chain: polkadot
+role: monitoring
+image: {repository: altvnv/mbelt_preloader, tag: 77bc8650}
+limits: {cpu: 400m, memory: 2000Mi}
+requests: {cpu: 400m, memory: 1000Mi}
+port: 3000
+metrics:
+  enabled: true
+env:
+  substrate_uri: ""
+  restart_blocks_uri: http://mbelt-mbelt3-prod-polkadot-preloader.mbelt3.svc.cluster.local:80/restart-unprocessed-blocks
+  restart_eras_uri: http://mbelt-mbelt3-prod-polkadot-preloader.mbelt3.svc.cluster.local:80/restart-unprocessed-eras
+  log_level: info
+  network_id: 0
+  mode: MONITORING
+  network: polkadot
+ingress:
+  enabled: false

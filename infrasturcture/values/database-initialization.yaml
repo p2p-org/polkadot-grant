@@ -1,0 +1,11 @@
+image:
+  repository: postgres
+  tag: 14
+
+database:
+  db: mydatabase
+  user: myuser
+  pass: mypassword
+  host: 127.0.0.1
+  port: 5432
+  certificates_secret_name: ""

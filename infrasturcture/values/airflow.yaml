@@ -1,0 +1,105 @@
+airflowVersion: "2.5.2"
+defaultAirflowTag: "2.5.2"
+
+images:
+  airflow:
+    repository: "altvnv/airflow"
+    tag: "2.5.2"
+    pullPolicy: IfNotPresent
+
+executor: "CeleryExecutor"
+logs:
+  persistence:
+    enabled: false
+
+fernetKeySecretName: airflow-fernet-key
+data:
+  metadataSecretName: airflow-postgresql-metadata
+
+extraEnv: |
+  - name: AIRFLOW_VAR_SA_BIGQUERY_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: airflow-bigquery-sa-json
+        key: bigquery-sa.json
+  - name: AIRFLOW_CONN_MBELT3_POLKADOT
+    valueFrom:
+      secretKeyRef:
+        name: mbelt3-postgresql-metadata
+        key: connection
+  - name: AIRFLOW_VAR_AIRFLOW_ENV_PARAMS
+    valueFrom:
+      secretKeyRef:
+        name: airflow-env-vars-json
+        key: config.json
+  - name: AIRFLOW__API__AUTH_BACKENDS
+    value: airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+  - name: AIRFLOW__SECRETS__BACKEND
+    value: airflow.secrets.local_filesystem.LocalFilesystemBackend
+  - name: AIRFLOW__CORE__DAGBAG_IMPORT_TIMEOUT
+    value: "600.0"
+  - name: AIRFLOW__SCHEDULER__JOB_HEARTBEAT_SEC
+    value: "10"
+  - name: AIRFLOW__SCHEDULER__SCHEDULER_HEARTBEAT_SEC
+    value: "10"
+  - name: AIRFLOW__WEBSERVER__WARN_DEPLOYMENT_EXPOSURE
+    value: "False"
+  - name: DBT_LOG_PATH
+    value: /opt/airflow/logs/dbt/logs
+  - name: DBT_TARGET_PATH
+    value: /opt/airflow/logs/dbt/target
+    # how many task can be run per scheduler (we have one sheduler, so it's total number of running tasks)
+  - name: AIRFLOW__CORE__PARALLELISM
+    value: "60"   # equals to (.airflow.workers.replicas * .airflow.workeres.keda.maxReplicaCount)
+  - name: AIRFLOW__KUBERNETES_EXECUTOR__DELETE_WORKER_PODS
+    value: "False"
+  - name: AIRFLOW_VAR_BIGLOADER_BUCKET
+    value: '${bucket_name}'
+
+workers:
+  replicas: 1
+  resources:
+    requests: { cpu: 2, memory: 8Gi }
+    limits: { cpu: 4, memory: 16Gi }
+  terminationGracePeriodSeconds: 18000
+
+scheduler:
+  replicas: 1
+  resources:
+    requests: {cpu: 2, memory: 2Gi}
+    limits: {cpu: 4, memory: 4Gi}
+
+webserverSecretKeySecretName: airflow-webserver-key
+webserver:
+  replicas: 1
+  resources:
+      requests: {cpu: 250m, memory: 2Gi}
+      limits: {cpu: 1, memory: 4Gi}
+
+  defaultUser:
+    username: "admin"
+    password: "changeme"
+
+  service:
+    type: LoadBalancer
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+
+dags:
+  gitSync:
+    enabled: true
+    repo: "https://github.com/p2paltvnv/dags.git"
+    branch: "main"
+    wait: 3600
+    subPath: "dags"
+    env:
+      - name: GITSYNC_SUBMODULES
+        value: "off"
+      - name: GITSYNC_SYNC_ON_SIGNAL
+        value: SIGHUP
+
+postgresql:
+  enabled: false
+
+redis:
+  enabled: true

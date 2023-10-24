@@ -1,0 +1,4 @@
+persistence:
+  size: 200Gi
+
+replicaCount: 4

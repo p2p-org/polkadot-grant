@@ -1,0 +1,124 @@
+image:
+  repository: altvnv/supserset
+  tag: sha-9135405dac4358f85399e73db66fc8a053346757
+
+initImage:
+  repository: apache/superset
+  tag: dockerize
+  pullPolicy: IfNotPresent
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 512Mi
+  requests:
+    cpu: 125m
+    memory: 256Mi
+
+bootstrapScript: |
+  #!/bin/bash
+  pip install authlib==1.2.1 sqlalchemy-bigquery==1.8.0 && \
+  if [ ! -f ~/bootstrap ]; then echo "Running Superset with uid {{ .Values.runAsUser }}" > ~/bootstrap; fi
+
+extraEnvRaw:
+  - name: SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: superset-secret-key
+        key: secret-key
+  - name: WTF_CSRF_ENABLED
+    value: "False"
+  - name: TALISMAN_ENABLED
+    value: "False"
+  - name: SESSION_COOKIE_SAMESITE
+    value: "Lax"
+  - name: SESSION_COOKIE_SECURE
+    value: "False"
+
+extraConfigs:
+  import_datasources.yaml: |
+    databases:
+    - allow_file_upload: true
+      allow_ctas: true
+      allow_cvas: true
+      database_name: Mbelt Bigquery
+      engine_information:
+        supports_file_upload: true
+        disable_ssh_tunneling: true
+      driver: bigquery
+      sqlalchemy_uri: "bigquery://{{ .Values.googleProjectId }}"
+
+service:
+  type: LoadBalancer
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  port: 8088
+  nodePort:
+    http: ~
+
+serviceAccount:
+  create: true
+  %{~ if service_account_name != "" ~}
+  annotations:
+    iam.gke.io/gcp-service-account: "${service_account_name}@${project_id}.iam.gserviceaccount.com"
+  %{~ endif ~}
+
+supersetNode:
+  replicaCount: 1
+  connections:
+    db_host: localhost
+    db_port: "5432"
+    db_user: admin
+    db_pass: admin
+    db_name: superset
+  forceReload: false
+  affinity: {}
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1024Mi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+supersetWorker:
+  replicaCount: 1
+  forceReload: false
+  affinity: {}
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1024Mi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+supersetCeleryBeat:
+  enabled: false
+supersetCeleryFlower:
+  enabled: false
+supersetWebsockets:
+  enabled: false
+
+init:
+  enabled: true
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1024Mi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  loadExamples: false
+  createAdmin: true
+  adminUser:
+    username: admin
+    firstname: Superset
+    lastname: Admin
+    email: admin@superset.com
+    password: admin
+
+postgresql:
+  enabled: false
+redis:
+  enabled: true

@@ -1,0 +1,19 @@
+---
+environment: mbelt3-prod
+chain: polkadot
+role: preloader
+replicas: 1
+image: {repository: altvnv/mbelt_preloader, tag: 77bc8650}
+limits: {cpu: 450m, memory: 200Mi}
+requests: {cpu: 400m, memory: 200Mi}
+port: 3000
+metrics:
+  enabled: true
+env:
+  log_level: info
+  network_id: 0
+  mode: LISTENER
+  network: polkadot
+  substrate_uri: ""
+ingress:
+  enabled: false

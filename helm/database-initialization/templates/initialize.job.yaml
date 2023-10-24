@@ -1,0 +1,80 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: database-init-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: database-init-container
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            set -e
+            echo "Running initialization script..."
+            {{- if .Values.database.certificates_secret_name }}
+            mkdir /tmp/certificates
+            cp /certificates-permissionsless/* /tmp/certificates
+            chmod -R 0600 /tmp/certificates
+            {{- end }}
+            psql -a -f /docker-entrypoint-initdb.d/init-script.sql
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cloud-sql-credentials
+              key: pass
+        - name: PGUSER
+          valueFrom:
+            secretKeyRef:
+              name: cloud-sql-credentials
+              key: user
+        - name: PGHOST
+          valueFrom:
+            secretKeyRef:
+              name: cloud-sql-credentials
+              key: host
+        - name: PGPORT
+          valueFrom:
+            secretKeyRef:
+              name: cloud-sql-credentials
+              key: port
+        - name: PGDATABASE
+          valueFrom:
+            secretKeyRef:
+              name: cloud-sql-credentials
+              key: db
+        - name: PGRST_DB_URI
+          value: "postgres://"
+        {{- if .Values.database.certificates_secret_name }}
+        - name: PGSSLKEY
+          value: "/tmp/certificates/postgresql.key"
+        - name: PGSSLCERT
+          value: "/tmp/certificates/postgresql.crt"
+        {{- end }}
+        volumeMounts:
+        - name: init-script-volume
+          mountPath: /docker-entrypoint-initdb.d
+        {{- if .Values.database.certificates_secret_name }}
+        - name: database-certificates-volume
+          mountPath: /certificates-permissionsless
+        {{- end }}
+      volumes:
+      - name: init-script-volume
+        configMap:
+          name: {{ .Chart.Name }}-configmap
+          items:
+          - key: init-script.sql
+            path: init-script.sql
+      {{- if .Values.database.certificates_secret_name }}
+      - name: database-certificates-volume
+        secret:
+          secretName: {{ .Values.database.certificates_secret_name }}
+          items:
+          - key: client-key
+            path: postgresql.key
+          - key: client-cert
+            path: postgresql.crt
+      {{- end }}
+      restartPolicy: Never
