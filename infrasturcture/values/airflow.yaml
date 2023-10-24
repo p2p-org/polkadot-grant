@@ -88,7 +88,7 @@ webserver:
 dags:
   gitSync:
     enabled: true
-    repo: "https://github.com/p2paltvnv/dags.git"
+    repo: "https://github.com/p2p-org/polkadot-grant-dags.git"
     branch: "main"
     wait: 3600
     subPath: "dags"
