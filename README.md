@@ -28,7 +28,7 @@ Before you begin, ensure you have the following prerequisites:
 
 1. **Create a Google Service Account and Generate JSON Key**:
    ```bash
-   gcloud iam service-accounts create <SERVICE_ACCOUNT_NAME> system --description "Polkadot monitoring system's service account"
+   gcloud iam service-accounts create <SERVICE_ACCOUNT_NAME> --description "Polkadot monitoring system's service account"
    gcloud projects add-iam-policy-binding <PROJECT_ID> --member "serviceAccount:<SERVICE_ACCOUNT_NAME>@YOUR_PROJECT_ID.iam.gserviceaccount.com" --role "roles/bigquery.dataEditor"
    gcloud projects add-iam-policy-binding <PROJECT_ID> --member "serviceAccount:<SERVICE_ACCOUNT_NAME>@YOUR_PROJECT_ID.iam.gserviceaccount.com" --role "roles/storage.objectUser"
    gcloud iam service-accounts keys create key.json --iam-account <SERVICE_ACCOUNT_NAME>@<PROJECT_ID>.iam.gserviceaccount.com
