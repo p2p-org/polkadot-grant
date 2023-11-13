@@ -11,7 +11,7 @@ resource "google_compute_address" "nat-ip" {
 
 
 resource "google_compute_router" "router" {
-  project = var.project
+  project = local.project
   name    = "${var.project_prefix}-router"
   network = google_compute_network.vpc.name
   region  = var.region
@@ -23,20 +23,20 @@ resource "google_compute_router_nat" "nat" {
   region                             = var.region
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 
-  nat_ip_allocate_option             = "MANUAL_ONLY"
-  nat_ips                            = [ google_compute_address.nat-ip.self_link ]
+  nat_ip_allocate_option = "MANUAL_ONLY"
+  nat_ips                = [google_compute_address.nat-ip.self_link]
 
   enable_dynamic_port_allocation      = true
   enable_endpoint_independent_mapping = false
   min_ports_per_vm                    = 4096
   max_ports_per_vm                    = 65536
 
-  tcp_transitory_idle_timeout_sec    = 60
-  udp_idle_timeout_sec               = 60
+  tcp_transitory_idle_timeout_sec = 60
+  udp_idle_timeout_sec            = 60
 
   log_config {
-    enable      = true
-    filter      = "ERRORS_ONLY"
+    enable = true
+    filter = "ERRORS_ONLY"
   }
 }
 

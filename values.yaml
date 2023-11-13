@@ -1,3 +1,5 @@
+project: ""
+
 mbelt:
   repository: altvnv/mbelt_preloader
   tag: 77bc8650
@@ -10,12 +12,10 @@ database:
   username: "mbelt"
   password: "pgpassword"
 
-authorizedNetworks: []
-  # - name: "network"
-  #   address: "0.0.0.0/0"
+authorizedNetworks:
+  - name: "all"
+    address: "0.0.0.0/0"
 
-serviceAccountName: ""
-serviceAccountToken: ""
 polkadotWSRPCUrl: "wss://rpc.polkadot.io/"
 
 airflow:
@@ -27,4 +27,4 @@ airflow:
 superset:
   username: admin
   password: "supersetpassword"
-  secretKey: "superSecretKey"
+  secretKey: ""

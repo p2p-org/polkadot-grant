@@ -58,10 +58,8 @@ service:
 
 serviceAccount:
   create: true
-  %{~ if service_account_name != "" ~}
   annotations:
     iam.gke.io/gcp-service-account: "${service_account_name}@${project_id}.iam.gserviceaccount.com"
-  %{~ endif ~}
 
 supersetNode:
   replicaCount: 1

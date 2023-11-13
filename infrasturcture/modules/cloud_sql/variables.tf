@@ -17,7 +17,7 @@ variable "authorized_networks" {
   #]
 }
 variable "deletion_protection" {
-  default = true
+  default = false
 }
 
 variable "instance_tier" {

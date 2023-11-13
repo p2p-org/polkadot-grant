@@ -12,6 +12,13 @@ logs:
   persistence:
     enabled: false
 
+createUserJob:
+  useHelmHooks: false
+  applyCustomEnv: false
+migrateDatabaseJob:
+  useHelmHooks: false
+  applyCustomEnv: false
+
 fernetKeySecretName: airflow-fernet-key
 data:
   metadataSecretName: airflow-postgresql-metadata

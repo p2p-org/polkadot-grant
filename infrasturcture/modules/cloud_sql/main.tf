@@ -31,6 +31,7 @@ resource "random_id" "db_name_suffix" {
 }
 
 resource "google_sql_database_instance" "this" {
+  depends_on          = [google_service_networking_connection.this]
   name                = "${var.name}-${random_id.db_name_suffix.hex}"
   database_version    = var.database_version
   region              = var.region
@@ -77,13 +78,11 @@ resource "google_sql_database_instance" "this" {
       }
     }
     user_labels = {
-      name             = var.name
-      project          = var.project
-      terraform        = "true"
+      name      = var.name
+      project   = var.project
+      terraform = "true"
     }
   }
-
-  depends_on = [google_sql_database_instance.this]
 }
 
 resource "google_sql_database" "this" {
@@ -107,7 +106,7 @@ resource "google_sql_user" "this" {
 }
 
 resource "google_sql_ssl_cert" "cluster_certificate" {
-  count = var.ssl_enabled ? 1 : 0
+  count       = var.ssl_enabled ? 1 : 0
   common_name = "cluster-certificate"
   instance    = google_sql_database_instance.this.name
 }

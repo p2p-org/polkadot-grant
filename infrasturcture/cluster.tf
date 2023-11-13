@@ -1,12 +1,13 @@
 module "cluster" {
-  source    = "./modules/cluster"
+  depends_on = [google_project_service.this]
+  source     = "./modules/cluster"
 
   providers = {
     google-beta = google-beta
   }
 
   name                                         = "${var.project_prefix}-cluster"
-  project                                      = var.project
+  project                                      = local.project
   region                                       = var.region
   network_id                                   = google_compute_network.vpc.id
   networking_mode                              = "VPC_NATIVE"
@@ -22,23 +23,24 @@ module "cluster" {
 }
 
 module "gke_auth" {
+  depends_on           = [module.cluster]
   source               = "terraform-google-modules/kubernetes-engine/google//modules/auth"
   version              = "24.1.0"
-  project_id           = var.project
+  project_id           = local.project
   location             = module.cluster.region
   cluster_name         = module.cluster.cluster_name
   use_private_endpoint = false
 }
 
 resource "kubernetes_config_map" "ip-masq-configmap" {
-  depends_on = [ module.cluster ]
+  depends_on = [module.cluster]
   metadata {
-    name = "ip-masq-agent"
+    name      = "ip-masq-agent"
     namespace = "kube-system"
   }
 
   data = {
-    config =<<EOF
+    config = <<EOF
       nonMasqueradeCIDRs:
         - 0.0.0.0/0
       masqLinkLocal: true
@@ -48,7 +50,7 @@ resource "kubernetes_config_map" "ip-masq-configmap" {
 }
 
 resource "kubernetes_daemonset" "ip_masq_agent" {
-  depends_on = [ module.cluster ]
+  depends_on = [module.cluster]
   metadata {
     name      = "ip-masq-agent"
     namespace = "kube-system"

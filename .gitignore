@@ -5,3 +5,5 @@
 *.old*
 *.lock*
 .terraform
+*.tfstate
+*.secret

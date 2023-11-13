@@ -275,7 +275,7 @@ CREATE TABLE IF NOT EXISTS sli_metrics (
     "entity" VARCHAR(66),
     "entity_id" INT,
     "name" VARCHAR(20),
-    "value" INT,
+    "value" BIGINT,
     "row_id" SERIAL,
     "row_time" TIMESTAMP,
     PRIMARY KEY ("row_id")

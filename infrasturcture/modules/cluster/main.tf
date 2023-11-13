@@ -6,6 +6,8 @@ resource "google_container_cluster" "this" {
   project  = var.project
   location = var.region
 
+  deletion_protection = false
+
   remove_default_node_pool = true
   initial_node_count       = 1
 
@@ -15,7 +17,7 @@ resource "google_container_cluster" "this" {
   dynamic "ip_allocation_policy" {
     for_each = var.networking_mode == "VPC_NATIVE" ? [1] : []
     content {
-      cluster_ipv4_cidr_block = "/20"
+      cluster_ipv4_cidr_block  = "/20"
       services_ipv4_cidr_block = "/20"
     }
   }
@@ -31,9 +33,9 @@ resource "google_container_cluster" "this" {
   }
 
   resource_labels = {
-    name             = var.name
-    project          = var.project
-    terraform        = "true"
+    name      = var.name
+    project   = var.project
+    terraform = "true"
   }
 
   addons_config {
@@ -57,7 +59,7 @@ resource "google_container_cluster" "this" {
   dynamic "workload_identity_config" {
     for_each = var.workload_identity_enabled ? [
       var.workload_identity_enabled
-    ] : [ ]
+    ] : []
     content {
       workload_pool = "${var.project}.svc.id.goog"
     }
@@ -68,7 +70,7 @@ resource "google_container_cluster" "this" {
     dynamic "resource_limits" {
       for_each = var.cluster_autoscaling_enabled ? [
         var.cluster_autoscaling_enabled
-      ] : [ ]
+      ] : []
       content {
         resource_type = "cpu"
         minimum       = var.cluster_autoscaling_resource_limits_cpu_min
@@ -78,7 +80,7 @@ resource "google_container_cluster" "this" {
     dynamic "resource_limits" {
       for_each = var.cluster_autoscaling_enabled ? [
         var.cluster_autoscaling_enabled
-      ] : [ ]
+      ] : []
       content {
         resource_type = "memory"
         minimum       = var.cluster_autoscaling_resource_limits_memory_min
@@ -112,7 +114,7 @@ resource "google_container_cluster" "this" {
   dynamic "node_config" {
     for_each = var.cluster_autoscaling_enabled ? [
       var.cluster_autoscaling_enabled
-    ] : [ ]
+    ] : []
     content {
       oauth_scopes = [
         "https://www.googleapis.com/auth/logging.write",
@@ -129,15 +131,15 @@ resource "google_container_cluster" "this" {
       }
 
       labels = {
-        name             = var.name
-        project          = var.project
-        terraform        = "true"
+        name      = var.name
+        project   = var.project
+        terraform = "true"
       }
 
       dynamic "workload_metadata_config" {
         for_each = var.workload_identity_enabled ? [
           var.workload_identity_enabled
-        ] : [ ]
+        ] : []
         content {
           mode = "GKE_METADATA"
         }
@@ -150,11 +152,11 @@ resource "google_container_cluster" "this" {
 
 # Create a primary custom node pool for the cluster.
 resource "google_container_node_pool" "this" {
-  name_prefix    = substr(var.name, 0, 12)
-  project        = var.project
-  location       = var.region
-  cluster        = google_container_cluster.this.name
-  node_count     = var.primary_node_pool_node_count
+  name_prefix = substr(var.name, 0, 12)
+  project     = var.project
+  location    = var.region
+  cluster     = google_container_cluster.this.name
+  node_count  = var.primary_node_pool_node_count
 
   node_config {
     preemptible  = var.primary_node_pool_preemptible
@@ -164,18 +166,18 @@ resource "google_container_node_pool" "this" {
     image_type   = var.primary_node_pool_image_type
 
     labels = merge({
-      name             = var.name
-      project          = var.project
-      terraform        = "true"
+      name      = var.name
+      project   = var.project
+      terraform = "true"
     }, var.primary_node_pool_labels)
 
     dynamic "taint" {
       for_each = var.primary_node_pool_taints
       iterator = t
       content {
-        effect = t.value[ "effect" ]
-        key    = t.value[ "key" ]
-        value  = t.value[ "value" ]
+        effect = t.value["effect"]
+        key    = t.value["key"]
+        value  = t.value["value"]
       }
     }
 
@@ -198,7 +200,7 @@ resource "google_container_node_pool" "this" {
     dynamic "workload_metadata_config" {
       for_each = var.workload_identity_enabled ? [
         var.workload_identity_enabled
-      ] : [ ]
+      ] : []
       content {
         mode = "GKE_METADATA"
       }
@@ -225,7 +227,7 @@ resource "google_container_node_pool" "this" {
 
   lifecycle {
     create_before_destroy = true
-    ignore_changes        = [
+    ignore_changes = [
       node_count
     ]
   }
@@ -239,12 +241,12 @@ resource "google_compute_address" "ingress" {
 
 # Create a secondary custom node pool for the cluster.
 resource "google_container_node_pool" "secondary" {
-  count          = var.secondary_node_pool_enabled ? 1 : 0
-  name_prefix    = substr(var.name, 0, 12)
-  project        = var.project
-  location       = var.region
-  cluster        = google_container_cluster.this.name
-  node_count     = var.secondary_node_pool_node_count
+  count       = var.secondary_node_pool_enabled ? 1 : 0
+  name_prefix = substr(var.name, 0, 12)
+  project     = var.project
+  location    = var.region
+  cluster     = google_container_cluster.this.name
+  node_count  = var.secondary_node_pool_node_count
 
   node_config {
     preemptible  = var.secondary_node_pool_preemptible
@@ -254,18 +256,18 @@ resource "google_container_node_pool" "secondary" {
     image_type   = var.secondary_node_pool_image_type
 
     labels = merge({
-      name             = var.name
-      project          = var.project
-      terraform        = "true"
+      name      = var.name
+      project   = var.project
+      terraform = "true"
     }, var.secondary_node_pool_labels)
 
     dynamic "taint" {
       for_each = var.secondary_node_pool_taints
       iterator = t
       content {
-        effect = t.value[ "effect" ]
-        key    = t.value[ "key" ]
-        value  = t.value[ "value" ]
+        effect = t.value["effect"]
+        key    = t.value["key"]
+        value  = t.value["value"]
       }
     }
 
@@ -306,33 +308,8 @@ resource "google_container_node_pool" "secondary" {
 
   lifecycle {
     create_before_destroy = true
-    ignore_changes        = [
+    ignore_changes = [
       node_count
     ]
   }
 }
-
-# Configure a backup plan for the cluster with a schedule.
-# resource "google_gke_backup_backup_plan" "this" {
-#   count    = var.backup_enabled ? 1 : 0
-#   project  = var.project
-#   provider = google-beta
-#   name     = "${var.name}-backup-plan"
-#   cluster  = google_container_cluster.this.id
-#   location = var.region
-
-#   retention_policy {
-#     backup_delete_lock_days = var.backup_delete_lock_days
-#     backup_retain_days = var.backup_retain_days
-#   }
-
-#   backup_schedule {
-#     cron_schedule = var.backup_schedule
-#   }
-
-#   backup_config {
-#     include_volume_data = var.backup_include_volume_data
-#     include_secrets     = var.backup_include_secrets
-#     all_namespaces      = var.backup_all_namespaces
-#   }
-# }
