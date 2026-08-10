@@ -1,4 +1,4 @@
-FROM postgres:14
+FROM postgres:18
 
 # Set environment variables
 ENV POSTGRES_DB=mydatabase
